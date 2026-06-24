@@ -1,0 +1,10 @@
+kNot v1.0.0 - bypass service throttling via WARP
+
+Install:
+1. Download kNot-Setup.exe
+2. Run it (WireSock installs automatically)
+3. Generate config at https://wsoeoe.github.io/kNot-site/
+4. Put .conf in data\conf\ folder
+5. In kNot: [1] -> [2] -> [3] -> [4]
+
+No Python needed. No .NET runtime needed. Single .exe.

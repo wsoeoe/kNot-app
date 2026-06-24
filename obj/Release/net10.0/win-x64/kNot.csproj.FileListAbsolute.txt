@@ -200,3 +200,4 @@ C:\Users\denis\ZCodeProject\kNot-CS\obj\Release\net10.0\win-x64\refint\knot.dll
 C:\Users\denis\ZCodeProject\kNot-CS\obj\Release\net10.0\win-x64\knot.pdb
 C:\Users\denis\ZCodeProject\kNot-CS\obj\Release\net10.0\win-x64\kNot.genruntimeconfig.cache
 C:\Users\denis\ZCodeProject\kNot-CS\obj\Release\net10.0\win-x64\ref\knot.dll
+C:\Users\denis\ZCodeProject\kNot-CS\obj\Release\net10.0\win-x64\kNot.sourcelink.json

@@ -30,6 +30,7 @@ class Program
 
     static readonly string Version = "1.0.0";
     static Process? _dpiProcess;
+    static System.Threading.Timer? _dpiWatchdog;
     static readonly string WireSockService = "wiresock-client-service";
 
     static readonly string[] WIRESOCK_PATHS = {
@@ -356,7 +357,7 @@ class Program
 
         Console.WriteLine("Шаг 2. WARP конфиг\n");
         Console.WriteLine("Для работы kNot нужен WARP конфиг (.conf).");
-        Console.WriteLine("  1. Откройте в браузере: https://warp-generator.github.io/");
+        Console.WriteLine("  1. Откройте в браузере: https://wsoeoe.github.io/kNot-site/");
         Console.WriteLine("  2. В блоке WireSock нажмите AWG 2.0 и скачайте .conf файл");
         Console.WriteLine("  3. Положите .conf файл в папку (рядом с knot.exe -> data -> conf)");
         Console.WriteLine("\nПосле этого выберите пункт [1] в меню.\n");
@@ -1282,6 +1283,22 @@ class Program
     {
         if (IsDpiRunning()) { Log("DPI-обход уже работает"); return; }
 
+        DoStartDpi();
+
+        // Watchdog — проверяет каждые 30 сек, перезапускает если упал
+        _dpiWatchdog?.Dispose();
+        _dpiWatchdog = new System.Threading.Timer(_ =>
+        {
+            if (!IsDpiRunning() && ServiceStatus().Running)
+            {
+                Log("DPI-обход: упал, перезапускаю...");
+                DoStartDpi();
+            }
+        }, null, 30000, 30000);
+    }
+
+    static void DoStartDpi()
+    {
         var s = LoadSettings();
         var strategy = s.DpiStrategy;
         Log($"DPI-обход: запускаю (стратегия: {strategy})");
@@ -1291,7 +1308,6 @@ class Program
         {
             if (IsAdmin())
             {
-                // Already admin — start directly, hidden
                 _dpiProcess = Process.Start(new ProcessStartInfo(exePath, $"--dpi-bypass {strategy}")
                 {
                     CreateNoWindow = true,
@@ -1302,7 +1318,6 @@ class Program
             }
             else
             {
-                // Need elevation for WinDivert — start with runas
                 var psi = new ProcessStartInfo(exePath, $"--dpi-bypass {strategy}")
                 {
                     Verb = "runas",
@@ -1315,20 +1330,19 @@ class Program
             Thread.Sleep(3000);
             if (_dpiProcess != null && !_dpiProcess.HasExited)
                 Log($"DPI-обход: запущен (PID {_dpiProcess.Id})");
+            else if (IsDpiRunning())
+                Log("DPI-обход: запущен (elevated)");
             else
-            {
-                // Check if it's running anyway (elevated process may not be trackable)
-                if (IsDpiRunning())
-                    Log("DPI-обход: запущен (elevated)");
-                else
-                    Log("DPI-обход: процесс упал");
-            }
+                Log("DPI-обход: процесс упал");
         }
         catch (Exception e) { Log($"DPI-обход: ошибка запуска: {e.Message}"); }
     }
 
     static void StopDpiBypass()
     {
+        _dpiWatchdog?.Dispose();
+        _dpiWatchdog = null;
+
         if (_dpiProcess != null && !_dpiProcess.HasExited)
         {
             try { _dpiProcess.Kill(); _dpiProcess.WaitForExit(5000); }
@@ -1354,6 +1368,27 @@ class Program
     }
 
     static void RunDpiBypassMode(string strategyId)
+    {
+        try
+        {
+            RunDpiBypassInner(strategyId);
+        }
+        catch (Exception e)
+        {
+            // Log to file before dying
+            try
+            {
+                File.AppendAllText(LogFile,
+                    $"[DPI FATAL] {DateTime.Now:yyyy-MM-dd HH:mm:ss} {e}\n", UTF8NoBOM);
+            }
+            catch { }
+            Console.WriteLine($"[DPI] FATAL: {e}");
+            Console.WriteLine("[DPI] Press any key to exit...");
+            try { Console.ReadKey(true); } catch { }
+        }
+    }
+
+    static void RunDpiBypassInner(string strategyId)
     {
         // Extract WinDivert files if needed
         ExtractDpiFiles();
@@ -1456,10 +1491,13 @@ class Program
             }
 
             packetCount++;
-            if (packetCount <= 10 || packetCount % 50 == 0)
+            if (packetCount <= 5 || packetCount % 100 == 0)
             {
                 string tag = (strategy.Repeats > 0 ? $" +{strategy.Repeats} fake" : "") + (strategy.Split ? " +split" : "");
-                Console.WriteLine($"[DPI] #{packetCount}: {srcIp}:{srcPort} -> {endpointIp}:{endpointPort} ({packet.Length}b){tag}");
+                var msg = $"[DPI] #{packetCount}: {srcIp}:{srcPort} -> {endpointIp}:{endpointPort} ({packet.Length}b){tag}";
+                Console.WriteLine(msg);
+                if (packetCount % 500 == 0)
+                    File.AppendAllText(LogFile, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {msg}\n", UTF8NoBOM);
             }
         }
     }

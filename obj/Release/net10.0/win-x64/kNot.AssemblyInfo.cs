@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("kNot")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0a07414a769919d68b492de5af705a60af1fb9e1")]
 [assembly: System.Reflection.AssemblyProductAttribute("kNot - обход замедлений сервисов")]
 [assembly: System.Reflection.AssemblyTitleAttribute("knot")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
