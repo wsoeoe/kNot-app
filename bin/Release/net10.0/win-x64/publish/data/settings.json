@@ -1,0 +1,20 @@
+{
+  "ConfigPath": "C:\\Users\\denis\\ZCodeProject\\kNot-CS\\bin\\Release\\net10.0\\win-x64\\publish\\data\\conf\\WARPw_12.conf",
+  "Groups": [
+    "discord",
+    "messengers",
+    "ai",
+    "youtube",
+    "music",
+    "gaming",
+    "rutracker",
+    "social",
+    "cleantax",
+    "cuda"
+  ],
+  "UseIPv6": true,
+  "Autostart": false,
+  "FirstRun": false,
+  "CloseBehavior": "keep",
+  "DpiStrategy": "fake"
+}
